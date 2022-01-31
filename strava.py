@@ -1,8 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 import sys
+import datetime
 
 number_of_listings = 5
+simple = True
 
 # Args
 if (len(sys.argv) < 4):
@@ -28,36 +30,71 @@ s = session.get('https://www.strava.cz/Strava/Stravnik/Objednavky')
 soup = BeautifulSoup(s.text, 'html.parser')
 res = soup.find_all(class_="objednavka-obalka objednavka-obalka-jednotne")
 
-# For the first `number_of_listings` listings
-for x in res[:number_of_listings]:
+def display_simple():
+    # For the first `number_of_listings` listings
+    for x in res[:number_of_listings]:
+        day = x.find("div").find("div").text.split('\n')[1].split('\r')[0].strip()
 
-    # Get the day and print
-    day = x.find("div").find("div").text.split('\n')[1].split('\r')[0].lstrip()
-    print(day)
-
-    # Find all the foods 
-    foods = x.find_all(class_="objednavka-jidla-obalka")[0].find_all(class_="objednavka-jidlo-obalka")
-    for food in foods:
-        # Find the values
-        food_name = food.find(class_="objednavka-jidlo-nazev").text
-        food_type = food.find(class_="objednavka-jidlo-popis").text
-        food_value = food.find(class_="objednavka-jidlo-zmena").contents[1].contents[3].attrs["value"]
-
-        # Remove this if you need to
-        # This just removes the soup entry
-        if(food_type == "Polévka"):
+        # Only today
+        if(int(day.split(' ')[2].strip()[::2]) == int(datetime.datetime.now().strftime("%m")) and int(day.split(' ')[1].strip()[:-1]) == int(datetime.datetime.now().strftime("%d"))):
+            pass
+        else:
             continue
 
-        # Turn the value from text to markdown-like text
-        if food_value == "zaskrtnuto":
-            food_value = "[x]"
-        elif food_value == "nezaskrtnuto":
-            food_value = "[ ]"
-        else:
-            food_value = "[-]"
-        
-        # Strip in case of leading/trailing spaces and print
-        print((food_value + " " + food_type + " - " + food_name).lstrip().rstrip())
+        # Find all the foods 
+        foods = x.find_all(class_="objednavka-jidla-obalka")[0].find_all(class_="objednavka-jidlo-obalka")
+        for food in foods:
+            # Find the values
+            food_name = food.find(class_="objednavka-jidlo-nazev").text
+            food_type = food.find(class_="objednavka-jidlo-popis").text
+            food_value = food.find(class_="objednavka-jidlo-zmena").contents[1].contents[3].attrs["value"]
 
-    # Empty line for cleanness
-    print()
+            # Remove this if you need to
+            # This just removes the soup entry
+            if(food_type == "Polévka"):
+                continue
+
+            # Turn the value from text to markdown-like text
+            if food_value == "zaskrtnuto":
+                print((food_name).strip())
+
+
+def display_table():
+    # For the first `number_of_listings` listings
+    for x in res[:number_of_listings]:
+
+        # Get the day and print
+        day = x.find("div").find("div").text.split('\n')[1].split('\r')[0].lstrip()
+        print(day)
+
+        # Find all the foods 
+        foods = x.find_all(class_="objednavka-jidla-obalka")[0].find_all(class_="objednavka-jidlo-obalka")
+        for food in foods:
+            # Find the values
+            food_name = food.find(class_="objednavka-jidlo-nazev").text
+            food_type = food.find(class_="objednavka-jidlo-popis").text
+            food_value = food.find(class_="objednavka-jidlo-zmena").contents[1].contents[3].attrs["value"]
+
+            # Remove this if you need to
+            # This just removes the soup entry
+            if(food_type == "Polévka"):
+                continue
+
+            # Turn the value from text to markdown-like text
+            if food_value == "zaskrtnuto":
+                food_value = "[x]"
+            elif food_value == "nezaskrtnuto":
+                food_value = "[ ]"
+            else:
+                food_value = "[-]"
+            
+            # Strip in case of leading/trailing spaces and print
+            print((food_value + " " + food_type + " - " + food_name).lstrip().rstrip())
+
+        # Empty line for cleanness
+        print()
+
+if(simple):
+    display_simple()
+else:
+    display_table()
